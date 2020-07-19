@@ -1,0 +1,63 @@
+   
+.main_container{
+  width: 90%;
+  margin: 0px auto;
+  background: grey;
+
+  padding: 10px 20px;
+}
+.cont{
+  padding: 10px 10px;
+  background: white;
+}
+.table_block{
+  width: 100%;
+  margin: 10px auto;
+  background: white;
+}
+.top_action_block{
+  text-align: right;
+  padding: 10px 0px;
+}
+.table_block tr, .edit_form{
+  height: 40px;
+}
+.table_block tr:not(:first-child){
+  width: 80%;
+}
+.table_block tr:nth-child(even){
+  background: #dedede;
+}
+
+
+
+    .none{
+      display:none;
+    }
+    .show{
+      display: block;
+    }
+    .mess_success{
+      background-color: green;
+      width: 80%;
+      margin: 10px auto;
+    }
+    .mees_but{
+      width: 20px;
+      float: right;
+    }
+
+.modal-active {
+  display:block;
+}
+.formItem {
+ width: 100%;
+}
+.modal-footer{
+  text-align: center;
+}
+
+.form-control-date{
+  display: inline-block;
+  width: 48.8%;
+}

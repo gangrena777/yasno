@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Компоненты Vue.js</title>
+<meta charset="utf-8" />
+<!--<link rel="stylesheet" type="text/css" href="css/erick_reset.css">-->
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" type="text/css" href="css/style.css">
+
+
+</head>
+<body>
+<h1 align="center">ToDoList</h1>
+  <div  id="app">
+
+      <div   v-if="messageShow"  class="mess_success jumbotron" align="center"><span class="badge badge-secondary  alert alert-primary">{{message}}</span>
+        <button class="mees_but"  v-on:click="messageShow=!messageShow">X</button></div>
+
+        <modal v-if="showForm" @close="showForm = false"  @addnewdeal="adddeal"></modal>
+        <filtermodal v-if="filterForm" @close="filterForm = false"  @filterdeal="filteringdeal"></filtermodal>
+
+        <div  class="main_container">
+              <div  class="top_action_block">
+                  <button  v-on:click="ShowDeals" class="btn btn-danger"  v-if="filterRefr">Сбросить фильтр</button> 
+                  <button  v-on:click="filterForm =!filterForm" class="btn btn-primary">Фильтровать</button> 
+                  <button  v-on:click="showForm =!showForm"  class="btn btn-success">Добавить заявку</button> 
+              </div>
+              <div class="cont">
+              <table class="table_block"  id="todotable">
+                      <tr>
+                        <th>№</th>
+                        <th>Дата создания</th>
+                        <th>Название</th>
+                        <th>Описание</th>
+                        <th>Телефон</th>
+                        <th>Действие</th>
+                      </tr>
+                      <tr v-show="showEditForm" class="edit_form" id="edit_info">
+                         <td><input type="hidden" name="id" v-model="editDeal.id"></td>
+                
+                         <td><input type="date" name="date_create" v-model="editDeal.date_create"></td>
+              
+                         <td><input type="text" name="name" v-model="editDeal.name" id="edit_name"></td>
+                
+                         <td><input type="text" name="description" v-model="editDeal.description" id="edit_description"></td>
+              
+                         <td><input type="text" name="phone"     v-model="editDeal.phone"  id="edit_phone" placeholder="+7(___)___-__-__"></td>
+                         <td>
+                               <button v-on:click="edit(editDeal)"  class="btn btn-success">Обновить</button>
+                               <button v-on:click="hide_edit" class="btn btn-danger">X</button>
+                         </td>
+                      </tr>  
+                 
+                 
+                     <tr  v-for="( deal, index) in todolist" :index="index" :deal="deal"  class="item">
+                    
+                        <td>{{ ++index }}</td>
+                        <td>{{deal.date_create}}</td>
+                        <td>{{deal.name}}</td>
+                        <td>{{deal.description}}</td>
+                        <td>{{deal.phone}}</td>
+                        <td>
+                 
+                           <button v-on:click.stop="showeditdeal(deal, index)" class="btn btn-primary">Редактировать</button>
+                           <button v-on:click.stop="deletedeal(deal.id)" class="btn btn-danger">X</button>
+                        </td>
+                 
+                        
+                     </tr>
+                 
+                </table>
+              </div>
+        </div>
+
+ </div>
+<script src="https://unpkg.com/vue"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<script src="js/makedinput.min.js"></script>
+
+<script>
+
+  Vue.component("modal",{
+
+    data: function () {
+      return { 
+               newItem:{
+                  name:'',
+                  description:'',
+                  phone:''
+                }
+             }
+    },
+    mounted: function() {
+     $("#phone").mask("+7(999)999-99-99");
+  },
+ 
+  template:`
+    <div class="modal fade in modal-active">
+      <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" @click="$emit('close')" class="close"><span >&times;</span></button>
+              <h4 class="modal-title">
+             Добавление новой записи
+              </h4>
+            </div>
+            <div class="modal-body">
+               <label class="formItem">Название заявки:</label>
+               <input type="text" name="name"  v-model="newItem.name" class="formItem">
+               <label class="formItem">Текст заявки:</label>
+               <input type="text" name="description" v-model="newItem.description"  class="formItem">
+               <label  class="formItem">Телефон:</label>
+               <input  class="form-control" id="phone" name="phone"  v-model="newItem.phone"  placeholder="+7 (___)___-__-__">
+
+            </div>
+            <div class="modal-footer">
+              <!-- <button type="button" class="btn btn-default" @click="$emit('close')">Close</button>-->
+              <button  @click="$emit('addnewdeal', newItem)" type="button" class="btn btn-success" >Добавить</button>
+            </div>
+        </div>
+      </div>
+    </div>`
+});
+
+Vue.component("filtermodal",{
+
+    data: function () {
+      return { 
+               filterItem:{
+                  date_create_from:'',
+                  date_create_to:'',
+                  phone:''
+                }
+             }
+    },
+    mounted: function() {
+     $("#filter_phone").mask("+7(999)999-99-99");
+    },
+    methods:{
+       refresh:function(){
+          this.filterItem.date_create_from ='',
+          this.filterItem.date_create_to = '',
+          this.filterItem.phone = ''
+       }
+    },
+ 
+    template:`
+    <div class="modal fade in modal-active">
+      <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" @click="$emit('close')" class="close"><span >&times;</span></button>
+              <h4 class="modal-title">
+            Фильтровать по:
+              </h4>
+            </div>
+            <div class="modal-body">
+          <label  class="formItem">Телефон:</label>
+          <input  class="form-control" id="filter_phone" name="phone"  v-model="filterItem.phone"  placeholder="+7 (___)___-__-__">
+          <label  class="formItem">Дата создания заявки:</label>
+          <input type="date" class="form-control-date" id="date_create_from" name="date_create_from"  v-model="filterItem.date_create_from">
+          <span>-</span>
+          <input  type="date" class="form-control-date" id="date_create_to" name="date_create_to"  v-model="filterItem.date_create_to">
+
+
+
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" @click="refresh()">Сбросить</button>
+              <button  @click="$emit('filterdeal', filterItem)" type="button" class="btn btn-success" >Найти</button>
+            </div>
+        </div>
+      </div>
+    </div>`
+});
+
+
+var vm = new Vue({
+    el: "#app",
+  
+   data: {
+      //  button:'+ADD todo',
+        message:'',
+        messageShow:false,
+        todolist: null,
+        showForm:false,
+        showEditForm:false,
+        filterForm:false,
+        filterRefr:false,
+
+        editDeal:{
+              id:'',
+              date_create:'',
+             name:'',
+             description:'',
+             phone:''
+        }
+        
+     
+       
+    },
+    mounted: function() {
+     $("#edit_phone").mask("+7(999)999-99-99");
+    },
+
+
+  created() {
+    this.ShowDeals();
+  },
+  // watch:{
+  //       showForm:function(){
+  //                 if(this.showForm){
+  //                   this.button = 'close form';
+  //                 }
+  //                 else this.button = '+ADD todo';
+  //                 }
+      
+  
+  //   },
+
+    methods:{
+             
+              ShowDeals:function(){
+                          this.filterRefr = false;
+
+                          var deals = {'deals':'all'};
+                         var data = JSON.stringify(deals);
+                         axios.get('action.php?deals='+data)
+                            .then( response =>{
+                              var list = response.data;
+                                   if( list['avaible'] ){
+                                        delete list['avaible'];
+                                        vm.todolist = list; 
+                                   }
+                                   else{
+                                          vm.message = 'Db is empty';
+                                          vm.messageShow = true;
+                                   }  
+                            });
+             },
+             showInfo:function(e){
+        
+              var t = event.target.nextElementSibling;
+             
+                  t.classList.toggle('show');
+                
+                 
+               },
+               adddeal:function(value){
+                             value.phone = $('#phone').val();  ///костылище
+                             var add_json = JSON.stringify(value);
+                              axios.get('action.php?new_deal='+encodeURIComponent(add_json))
+                                         .then( response =>{
+                                          var mess = response.data;
+                                           vm.message = mess.message;
+                                           vm.messageShow= true;
+                                           vm.showForm = false;
+                                             vm.ShowDeals();
+
+
+                                         });            
+
+                  
+                },
+               deletedeal:function(val){
+                     // event.stopPropagation();
+
+                            var del ={ 
+                                     'del_id': val
+                                    }
+                            var del_json = JSON.stringify(del);
+                            axios.get("action.php?del_id="+del_json)
+                                       .then( response =>{
+                                        var mess = response.data;
+                                         vm.message = mess.message;
+                                          vm.messageShow = true;
+                                          vm.ShowDeals();
+                                           vm.todolist='';
+
+                                       });             
+                },
+                showeditdeal:function(deal, index){
+                       this.showEditForm = true;
+                       var item =  document.querySelectorAll('.item');
+                      for(var i=0; i< item.length; i++){
+                      
+                            var get_attr_index = item[i].getAttribute('index');
+                            if( get_attr_index == index -1) {
+                             
+                              item[i].setAttribute('style', 'display: none;');
+                              document.querySelector('#edit_info').setAttribute('index', get_attr_index);
+                               var ind = document.querySelector('#edit_info').firstChild;
+                               ind.innerHTML = index;
+                            }
+                        }
+                        vm.editDeal = deal
+                    
+                },
+                hide_edit:function(){
+                       
+                        this.showEditForm=false;
+                        var item =  document.querySelectorAll('.item');
+                         for(var i=0; i< item.length; i++){
+                              item[i].setAttribute('style', 'visibility: visible;');
+
+                        }
+                },
+                edit:function(editDeal){
+                        this.editDeal.phone =  $("#edit_phone").val();  //костылище 
+                        var edit_json = JSON.stringify(editDeal);
+                        axios.get("action.php?edit_deal=" + encodeURIComponent(edit_json))
+                          .then( response =>{
+                                var mess = response.data;
+                                vm.message = mess.message;
+                                vm.messageShow= true;
+                                vm.showEditForm = false;
+                                vm.ShowDeals();
+
+                                var item =  document.querySelectorAll('.item');
+                                for(var i=0; i< item.length; i++){
+                                      item[i].setAttribute('style', 'visibility: visible;');
+                                }
+
+                        });                 
+                },
+                filteringdeal:function(filterItem){
+                            filterItem.phone = $('#filter_phone').val();
+                            var filter_json = JSON.stringify(filterItem);
+                          console.log(filter_json);
+                                  axios.get("action.php?filter_deal=" + encodeURIComponent(filter_json))
+                                         .then( response =>{
+                                             
+                                                  vm.filterForm = false;
+                                             
+                                                var filter_list =  response.data;
+                                                console.log(filter_list);
+
+                                                  if( filter_list['avaible'] ){
+                                                  delete filter_list['avaible'];
+                                                  this.todolist = filter_list;
+                                                  this.filterRefr = true;
+
+                                                  }
+                                                  else{
+                                                  vm.message = 'You have problem with your filter data';
+                                                  vm.messageShow = true;
+                                                  }  
+   
+                                          });
+                }        
+               
+             }         
+    
+});
+</script>
+</body>
+</html>
